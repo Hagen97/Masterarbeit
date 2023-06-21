@@ -1,0 +1,567 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="MAIN" Id="{dd5ea9f5-fc62-491d-a590-42d71a154570}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM MAIN
+VAR
+	// Allgemeine Variablen
+	bNeedReset : BOOL := FALSE;					// Merker, dass ein Reset erforderlich ist
+	bStartReset: BOOL := FALSE;
+	bLocalFahrbefehlFreigabe: BOOL := FALSE;	// Merker das es eine Freigabe für Fahrbefehle gibt
+	bFehlerAufgetreten: BOOL := FALSE;			// Merker das ein Fehler aufgetreten ist
+	
+	bLocalLeuchtmelderStoerung: BOOL := FALSE;
+	bLocalLeuchtmelderBereit: BOOL := FALSE;
+	
+	// FehlerVariablen
+	bLocalSchutzabdeckungFehler: BOOL := FALSE;
+	
+	//-----------------------------------------------------
+	// Variablen für den Motor
+	//-----------------------------------------------------
+	axis: AXIS_REF;
+	bFahrbefehlErhalten: BOOL := FALSE;
+
+	
+	// Power
+    fbAxisPower: MC_Power;
+	rOverride: REAL := 100;
+	bMotorEinschalten: BOOL := FALSE;
+	bMotorWarEingeschaltet: BOOL := FALSE;
+	
+	// Erste Fahrbefehl
+    fbAxisMoveAbsolute: MC_MoveAbsolute;
+	bLocalSetFirstFahrbefehl: BOOL := FALSE;
+	lrLocalFirstPosition: LREAL := 0;
+	bAboslutePositionAnfahren: BOOL := FALSE;
+	bLocalFirstFahrbefehlGestartet: BOOL := FALSE;
+	bLocalFirstFahrbefehlAbgeschlossen: BOOL := FALSE;
+	bLocalFirstFahrbefehlAktiv: BOOL := FALSE;
+	bLocalFirstFahrbefehl: BOOL := FALSE;
+	
+	// Zweite Fahrbefehl
+	fbAxisSecondMoveAbsolute: MC_MoveAbsolute;
+	bLocalSetSecondFahrbefehl: BOOL := FALSE;
+	lrLocalSecondPosition: LREAL := 0;
+	lrLocalSecondAcceleration: LREAL := 0;
+	lrLocalSecondDeceleration: LREAL := 0;
+	bLocalSecondFahrbefehlGestartet: BOOL := FALSE;
+	bLocalSecondFahrbefehlAbgeschlossen: BOOL := FALSE;
+	bLocalSecondFahrbefehl: BOOL := FALSE;
+	
+	// Dritte Fahrbefehl
+	fbAxisThirdMoveAbsolute: MC_MoveAbsolute;
+	bLocalSetThirdFahrbefehl: BOOL := FALSE;
+	lrLocalThirdPosition: LREAL := 0;
+	lrLocalThirdAcceleration: LREAL := 0;
+	lrLocalThirdDeceleration: LREAL := 0;
+	bLocalThirdFahrbefehlGestartet: BOOL := FALSE;
+	bLocalThirdFahrbefehlAbgeschlossen: BOOL := FALSE;
+	 
+	// Set Position
+	fbAxisSetPosition: MC_SetPosition;
+	bLocalSetPosition: BOOL := FALSE;
+	
+	// Stoppen
+	fbAxisStop: MC_Stop;
+	bLocalSetAchseStop: BOOL := FALSE;
+	bLocalAchseGestoppt: BOOL := FALSE;
+	
+	ST_OptionSetPosition: ST_SetPositionOptions;
+	MC_OptionBufferMode: MC_BufferMode;
+	
+	iCase: INT := 1;
+	
+	
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Status des Motors auslesen
+axis.ReadStatus();
+
+//-----------------------------------------------------
+// Ausgänge des Buskopplers ansteuern
+//-----------------------------------------------------
+GVL_Var.bDALeuchtmelderStoerung := GVL_Var.bSetLeuchtmelderStoerung OR bLocalLeuchtmelderStoerung;	// Leuchtmelder Störung ansteuern
+GVL_Var.bDALeuchtmelderBereit := GVL_Var.bSetLeuchtmelderBereit OR bLocalLeuchtmelderBereit;		// Leuchtmelder Bereit ansteuern
+GVL_Var.bDAMesstasterNullen := GVL_Var.bSetMesstasterNullen OR GVL_Var.bDIMesstasterNullen;		// Messtaster S5 nullen
+
+// Soll die Druckluft abgeschaltet werden?
+IF (GVL_Var.bSetDruckluftAbschalten = TRUE) THEN
+	// Relais ziehen an und die Magnetventile werden abgeschaltet
+	GVL_Var.bDARelaisMagnetventilLuftlagertisch := TRUE;
+	GVL_Var.bDARelaisMagnetventilLuftlagerbuchse := TRUE;
+ELSE
+	// Relais fallen ab und die Magnetventile werden eingeschaltet
+	GVL_Var.bDARelaisMagnetventilLuftlagertisch := FALSE;
+	GVL_Var.bDARelaisMagnetventilLuftlagerbuchse := FALSE;
+END_IF
+
+// Sollen die Heizpatronen zugeschalten/freigegeben werden?
+IF (GVL_Var.bSetHeizpatronenFreigeben = TRUE AND bFehlerAufgetreten = FALSE) THEN
+	GVL_Var.bDAHeizpatroneFreigeben := TRUE;
+	GVL_Var.bGetHeizpatronenFreigegeben := TRUE;
+	
+	// Soll der Massekontakt der Heizpatronen geschaltet werden?
+	IF (GVL_Var.bSetHeizpatronenMasseSchalten = TRUE) THEN
+		GVL_Var.bDAHeizpatronenMasseSchalten := TRUE;	// Masseverbindung herstellen
+		GVL_Var.bDAHeizpatroneFreigeben := TRUE;		// Merker, dass Masseverbindung hergestellt wurde
+	ELSE
+		GVL_Var.bDAHeizpatronenMasseSchalten := FALSE;	// Masseverbindung trennen
+		GVL_Var.bDAHeizpatroneFreigeben := FALSE;		// Merker, dass Masseverbindung getrennt wurde
+	END_IF
+	
+ELSE
+	GVL_Var.bDAHeizpatroneFreigeben := FALSE;
+	GVL_Var.bGetHeizpatronenFreigegeben := FALSE;
+	GVL_Var.bDAHeizpatronenMasseSchalten := FALSE;	// Masseverbindung trennen
+	GVL_Var.bDAHeizpatroneFreigeben := FALSE;		// Merker, dass Masseverbindung getrennt wurde
+END_IF
+
+
+//-----------------------------------------------------
+// Daten an C# übergeben
+//-----------------------------------------------------
+IF (GVL_Var.bSetConnect = TRUE) THEN
+	GVL_Var.bGetNotAus := NOT GVL_Var.bDINotAus;
+	GVL_Var.bGetNotAusQuittiert := NOT GVL_Var.bDINotAusquittiert;
+	GVL_Var.bGetPneumatikdruckVorhanden := NOT GVL_Var.bDIDruckschalter;
+	GVL_Var.bGetDruckluftZugeschaltet := GVL_Var.bDARelaisMagnetventilLuftlagerbuchse AND GVL_Var.bDARelaisMagnetventilLuftlagertisch;
+	GVL_Var.bGetMesstasterVorhanden := NOT GVL_Var.bDIMesstasterVorhanden;
+	GVL_Var.bGetMesstasterGenullt := NOT GVL_Var.bDIMesstasterNullen;
+	GVL_Var.bGetAbdeckungGeschlossen := NOT GVL_Var.bDIAbdeckungGeschlossen;
+	GVL_Var.bGetKnebelschalterEinrichten := NOT GVL_Var.bDIKnebelschalterEinrichten;
+	GVL_Var.bGetKnebelschalterBetrieb := NOT GVL_Var.bDIKnebelschalterBetrieb;
+	
+	GVL_Var.bGetAchseGestoppt := NOT bLocalAchseGestoppt;
+ELSE
+	GVL_Var.bGetNotAus := GVL_Var.bDINotAus;
+	GVL_Var.bGetNotAusQuittiert := GVL_Var.bDINotAusquittiert;
+	GVL_Var.bGetPneumatikdruckVorhanden := GVL_Var.bDIDruckschalter;
+	GVL_Var.bGetDruckluftZugeschaltet := NOT (GVL_Var.bDARelaisMagnetventilLuftlagerbuchse AND GVL_Var.bDARelaisMagnetventilLuftlagertisch);
+	GVL_Var.bGetMesstasterVorhanden := GVL_Var.bDIMesstasterVorhanden;
+	GVL_Var.bGetMesstasterGenullt := GVL_Var.bDIMesstasterNullen;
+	GVL_Var.bGetAbdeckungGeschlossen := GVL_Var.bDIAbdeckungGeschlossen;
+	GVL_Var.bGetKnebelschalterEinrichten := GVL_Var.bDIKnebelschalterEinrichten;
+	GVL_Var.bGetKnebelschalterBetrieb := GVL_Var.bDIKnebelschalterBetrieb;
+	
+	GVL_Var.bGetAchseGestoppt := bLocalAchseGestoppt;
+	
+	GVL_Var.bGetMesstasterGenullt := GVL_Var.bDAMesstasterNullen;
+END_IF
+
+//-----------------------------------------------------
+// Fehlererkennung
+//-----------------------------------------------------
+// Schutzabdeckung abfragen, Wenn der Knebelschalter auf Betrieb 
+// steht und die Abdeckung offen ist, liegt ein Fehler vor.
+IF (GVL_Var.bDIKnebelschalterBetrieb = TRUE AND GVL_Var.bDIAbdeckungGeschlossen = FALSE) THEN
+	bLocalSchutzabdeckungFehler := TRUE;
+ELSE
+	bLocalSchutzabdeckungFehler := FALSE;
+END_IF
+
+
+//-----------------------------------------------------
+// Schleppabstand bei der Positionierung löschen?
+//-----------------------------------------------------
+IF (GVL_Var.bSetClearPositionLag = TRUE) THEN
+	ST_OptionSetPosition.ClearPositionLag := TRUE;
+ELSE
+	ST_OptionSetPosition.ClearPositionLag := FALSE;
+END_IF
+
+
+
+
+// Ist ein Fehler aufgetreten?
+IF (bFehlerAufgetreten = TRUE) THEN
+	bLocalLeuchtmelderStoerung := TRUE;
+	// Ist ein Fahrbefehl gestartet?
+	IF (bLocalFirstFahrbefehlGestartet = TRUE OR bLocalSecondFahrbefehlGestartet = TRUE OR bLocalThirdFahrbefehlGestartet = TRUE) THEN
+		bLocalSetAchseStop := TRUE;	// Motor stoppen und somit Fahrbefehl stoppen
+	// Achse gestoppt und gesperrt?
+	ELSIF (bLocalSetAchseStop = TRUE) THEN
+		bLocalSetAchseStop := FALSE;	// Sperre aufheben
+	ELSE
+		bMotorEinschalten := FALSE;		// Motor abschalten
+		bNeedReset := TRUE;				// Merker das Reset gebraucht wird
+	END_IF
+	
+// Kein Fehler aufgetreten?
+ELSE
+	// Globale Variablen an lokale übergeben
+	bLocalSetAchseStop:= GVL_Var.bSetAchseStop;
+	
+	// Motor einschalten, Druckluft zugeschaltet, Not-Aus und kein Fehler bei der Abdeckung?
+	IF (GVL_Var.bSetMotorEinschalten = TRUE AND GVL_Var.bGetDruckluftZugeschaltet = TRUE AND GVL_Var.bDINotAus = TRUE AND bLocalSchutzabdeckungFehler = FALSE) THEN
+		bMotorEinschalten := TRUE;			// Motor einschalten
+	END_IF
+	
+	// Motor einschalten, Motor ist eingeschaltet, Druckluft zugeschaltet und Not-Aus
+	IF (bMotorEinschalten = TRUE AND GVL_Var.bGetMotorEingeschaltet = TRUE AND GVL_Var.bGetDruckluftZugeschaltet = TRUE AND GVL_Var.bDINotAus = TRUE AND bLocalSchutzabdeckungFehler = FALSE) THEN
+		bLocalFahrbefehlFreigabe := TRUE;	// Freigabe für Fahrbefehle geben
+	END_IF
+	
+	// Motor abschalten?
+	IF (GVL_Var.bSetMotorEinschalten = FALSE) THEN
+		bMotorEinschalten := FALSE;			// Motor abschalten
+		bLocalFahrbefehlFreigabe := FALSE;	// Freigabe für Fahrbefehl entziehen
+	END_IF
+	
+	// Gab es eine Freigabe und es kam zu einem Fehler?
+	IF (bLocalFahrbefehlFreigabe = TRUE AND (GVL_Var.bGetDruckluftZugeschaltet = FALSE OR GVL_Var.bDINotAus = FALSE OR bLocalSchutzabdeckungFehler = TRUE)) THEN
+		bLocalFahrbefehlFreigabe := FALSE;	// Freigabe für Fahrbefehle entziehen
+		bFehlerAufgetreten := TRUE;			// Merker, dass ein Fehler aufgetreten ist
+	END_IF
+END_IF
+
+// Wird ein Reset gebraucht?
+IF (bNeedReset = TRUE) THEN
+	// SetReset True?
+	IF (GVL_Var.bSetResetTwinCAT = TRUE) THEN
+		bStartReset := TRUE;
+		
+	END_IF
+	
+	// Fallende Flanke an SetReset?
+	IF (bStartReset = TRUE AND GVL_Var.bSetResetTwinCAT = FALSE) THEN
+		// Reset zurücksetzen
+		bStartReset := FALSE;
+		bNeedReset := FALSE;
+		bFehlerAufgetreten := FALSE;
+		bLocalLeuchtmelderStoerung := FALSE;
+	END_IF
+END_IF
+
+//-----------------------------------------------------
+// Weitere Befehle zulässig, wenn es eine Freigabe für Fahrbefehle gibt
+//-----------------------------------------------------
+IF (bLocalFahrbefehlFreigabe = TRUE) THEN
+	// Set Position Befehl aus C# übernehemen
+	bLocalSetPosition:= GVL_Var.bSetPosition;
+	
+	//-----------------------------------------------------
+	// Flanke für Überschreiten einer Position erzeugen
+	//-----------------------------------------------------
+	IF (GVL_Var.bSetPositionsFlankeErzeugen = TRUE AND axis.NcToPlc.ActPos <= GVL_Var.rSetPositonFuerFlanke) THEN
+		GVL_Var.bGetPositonsFlanke := TRUE;
+		//GVL_Var.lGetMotorposition := axis.NcToPlc.ActPos;
+	ELSE
+		GVL_Var.bGetPositonsFlanke := FALSE;
+		//GVL_Var.lGetMotorposition := axis.NcToPlc.ActPos;
+	END_IF
+	
+	
+	
+	
+	//-----------------------------------------------------
+	// Normalen Fahrbefehl erhalten?
+	//-----------------------------------------------------
+	IF (GVL_Var.bSetFahrbefehl = TRUE AND GVL_Var.bSetGeregelteFahrt = FALSE AND GVL_Var.bSetAchseStop = FALSE) THEN
+		lrLocalFirstPosition := GVL_Var.rSetFirstZielposition;	// Zielposition übergeben
+		bLocalSetFirstFahrbefehl := TRUE;					// Ersten Fahrbefehl starten
+		
+		iCase := 1;	// Case Anweisung zurücksetzen
+		
+		// Start und Abschluss an C# übergeben
+		GVL_Var.bGetFahrbefehlGestartet := bLocalFirstFahrbefehlGestartet;
+		GVL_Var.bGetFahrbefehlAbgeschlossen := bLocalFirstFahrbefehlAbgeschlossen;
+	
+	//-----------------------------------------------------
+	// Geregelten Fahrbefehl erhalten?
+	//-----------------------------------------------------
+	ELSIF (GVL_Var.bSetFahrbefehl = FALSE AND GVL_Var.bSetGeregelteFahrt = TRUE AND GVL_Var.bSetAchseStop = FALSE) THEN
+		CASE iCase OF
+			// Ersten Fahrbefehl starten
+			1 :	
+				lrLocalFirstPosition := GVL_Var.rSetFirstZielposition;	// Drehwinkel für ersten Fahrbefehl übergeben
+				bLocalSetFirstFahrbefehl := TRUE;						// Ersten Fahrbefehl starten
+				iCase := 2;
+				
+			// Erste Fahrbefehl gestartet?
+			2 : 
+				// Erste Move Baustein ist Busy?
+				IF (bLocalFirstFahrbefehlGestartet = TRUE) THEN
+					// Status der Fahrbefehle an C# übergeben
+					GVL_Var.bGetFahrbefehlGestartet := bLocalFirstFahrbefehlGestartet;
+					GVL_Var.bGetFahrbefehlAbgeschlossen := bLocalThirdFahrbefehlAbgeschlossen;
+					
+					bLocalSetFirstFahrbefehl := FALSE;		// Ersten Fahrbefehl zurücknehmen
+					iCase := 3;
+				END_IF
+				
+			// Zweiten Fahrbefehl starten
+			3 : 
+				lrLocalSecondPosition := GVL_Var.rSetSecondZielposition;	// Drehwinkel für zweiten Fahrbefehl übergeben
+				MC_OptionBufferMode := MC_Blendinghigh;						// Buffer Mode einstellen
+				bLocalSetSecondFahrbefehl := TRUE;							// Zweiten Fahrbefehl setzen
+				iCase := 4;
+				
+			// Zweite Fahrbefehl gestartet?
+			4 :
+				IF (bLocalSecondFahrbefehlGestartet = TRUE) THEN
+					bLocalSetSecondFahrbefehl := FALSE;		// Zweiten Fahrbefehl zurücknehmen
+					iCase := 5;
+				END_IF
+			
+			// Erste Befehl nicht mehr aktiv?
+			5 :
+				IF (bLocalFirstFahrbefehlAktiv = FALSE) THEN
+					iCase := 6;
+				END_IF
+				
+			// Dritten Fahrbefehl starten
+			6 :
+				lrLocalThirdPosition := GVL_Var.rSetThirdZielposition;	// Drehwinkel für dritten Fahrbefehl übergeben
+				MC_OptionBufferMode := MC_Blendinghigh;					// Buffer Mode einstellen
+				bLocalSetThirdFahrbefehl := TRUE;						// Dritten Fahrbefehl setzen
+				iCase := 7;
+			
+			// Dritte Fahrbefehl abgeschlossen?
+			7 : 
+				// Status der Fahrbefehle an C# übergeben
+				GVL_Var.bGetFahrbefehlGestartet := bLocalFirstFahrbefehlGestartet;
+				GVL_Var.bGetFahrbefehlAbgeschlossen := bLocalThirdFahrbefehlAbgeschlossen;
+				
+		END_CASE	
+	
+	//-----------------------------------------------------
+	// Keinen Fahrbefehl erhalten?
+	//-----------------------------------------------------
+	ELSE
+		// Alle Fahrbefehle zurück nehmen
+		bLocalSetFirstFahrbefehl := FALSE;
+		bLocalSetSecondFahrbefehl := FALSE;
+		bLocalSetThirdFahrbefehl := FALSE;
+		
+		iCase := 1;	// Case-Anweisung zurücksetzen
+		
+		// Fahrbefehl abgeschlossen an C# übergeben
+		GVL_var.bGetFahrbefehlAbgeschlossen := bLocalFirstFahrbefehlAbgeschlossen OR bLocalThirdFahrbefehlAbgeschlossen;
+	END_IF
+ELSE
+	// Set Position
+	bLocalSetPosition:= FALSE;
+	
+	// Alle Fahrbefehle zurück nehmen
+	bLocalSetFirstFahrbefehl := FALSE;
+	bLocalSetSecondFahrbefehl := FALSE;
+	bLocalSetThirdFahrbefehl := FALSE;
+	
+	iCase := 1;	// Case-Anweisung zurücksetzen
+		
+	// Fahrbefehl abgeschlossen an C# übergeben
+	GVL_var.bGetFahrbefehlAbgeschlossen := bLocalFirstFahrbefehlAbgeschlossen OR bLocalThirdFahrbefehlAbgeschlossen;
+END_IF
+
+
+
+//-----------------------------------------------------
+// Motorsteuerung
+//-----------------------------------------------------
+// MC_POWER steuern
+fbAxisPower(
+    Axis:= axis,
+    Enable:= bMotorEinschalten,
+    Enable_Positive:= GVL_Var.bSetDrehrichtungPositiv,
+    Enable_Negative:= GVL_Var.bSetDrehrichtungNegativ,
+    Override:= rOverride,
+    BufferMode:= ,
+    Options:= ,
+    Status=> GVL_Var.bGetMotorEingeschaltet,
+    Busy=> ,
+    Active=> ,
+    Error=> ,
+    ErrorID=> );
+
+// Position auf Vorgabe setzen
+fbAxisSetPosition(
+	Axis:= axis,
+	Execute:= GVL_Var.bSetPosition,		// Steigende Flanke = Position setzen
+	Position:= GVL_Var.rSetPositionValue,
+	Mode:= FALSE,						// False = Absolute Position
+	Options:= ST_OptionSetPosition,
+	Done => GVL_Var.bGetPositionGesetzt,	// Merker Position gesetzt
+	Busy =>,
+	Error =>,
+	ErrorID => );
+	
+// Ersten MC_MoveAbsolute steuern
+fbAxisMoveAbsolute(
+	Axis:= axis,
+	Execute:= bLocalSetFirstFahrbefehl,			// Steigende Flanke = Fahrbefehl
+	Position:= lrLocalFirstPosition,			//  	Distance
+	Velocity:= GVL_Var.rSetFirstZielgeschwindigkeit,
+	Acceleration:= GVL_Var.rSetAcceleration,
+	Deceleration:= GVL_Var.rSetDeceleration,
+	Jerk:= ,
+	BufferMode:= ,
+	Options:= ,
+	Done=> bLocalFirstFahrbefehlAbgeschlossen,
+	Busy=> bLocalFirstFahrbefehlGestartet,
+	Active=> bLocalFirstFahrbefehlAktiv,
+	CommandAborted=> ,
+	Error=> ,
+	ErrorID=> );	
+
+	
+// Zweiten MC_MoveAbsolute steuern
+fbAxisSecondMoveAbsolute(
+	Axis:= axis,
+	Execute:= bLocalSetSecondFahrbefehl,			// Steigende Flanke = Fahrbefehl
+	Position:= lrLocalSecondPosition,	// 	Distance
+	Velocity:= GVL_Var.rSetSecondZielgeschwindigkeit,
+	Acceleration:= lrLocalSecondAcceleration,
+	Deceleration:= lrLocalSecondDeceleration,
+	Jerk:= ,
+	BufferMode:= MC_OptionBufferMode,
+	Options:= ,
+	Done=> bLocalSecondFahrbefehlAbgeschlossen,
+	Busy=> bLocalSecondFahrbefehlGestartet,
+	Active=> ,
+	CommandAborted=> ,
+	Error=> ,
+	ErrorID=> );
+
+// Dritten MC_MoveAbsolute steuern
+fbAxisThirdMoveAbsolute(
+	Axis:= axis,
+	Execute:= bLocalSetThirdFahrbefehl,			// Steigende Flanke = Fahrbefehl
+	Position:= lrLocalThirdPosition,	// 	Distance
+	Velocity:= GVL_Var.rSetThirdZielgeschwindigkeit,
+	Acceleration:= lrLocalThirdAcceleration,
+	Deceleration:= lrLocalThirdDeceleration,
+	Jerk:= ,
+	BufferMode:= MC_OptionBufferMode,
+	Options:= ,
+	Done=> bLocalThirdFahrbefehlAbgeschlossen,
+	Busy=> bLocalThirdFahrbefehlGestartet,
+	Active=> ,
+	CommandAborted=> ,
+	Error=> ,
+	ErrorID=> );	
+	
+// MC_Stop steuern
+fbAxisStop(
+	Axis:= axis,
+	Execute:=bLocalSetAchseStop,
+	Deceleration:= ,
+	Jerk:= ,
+	Options:= ,
+	Done=> bLocalAchseGestoppt,
+	Busy=> GVL_Var.bGetAchseWirdGestoppt,
+	Active=> ,
+	CommandAborted=> ,
+	Error=> ,
+	ErrorID=> );]]></ST>
+    </Implementation>
+    <LineIds Name="MAIN">
+      <LineId Id="951" Count="0" />
+      <LineId Id="64" Count="0" />
+      <LineId Id="505" Count="2" />
+      <LineId Id="69" Count="0" />
+      <LineId Id="508" Count="0" />
+      <LineId Id="510" Count="1" />
+      <LineId Id="954" Count="0" />
+      <LineId Id="957" Count="8" />
+      <LineId Id="955" Count="1" />
+      <LineId Id="985" Count="0" />
+      <LineId Id="987" Count="1" />
+      <LineId Id="997" Count="0" />
+      <LineId Id="1072" Count="0" />
+      <LineId Id="1079" Count="0" />
+      <LineId Id="1074" Count="1" />
+      <LineId Id="1080" Count="0" />
+      <LineId Id="1077" Count="1" />
+      <LineId Id="1081" Count="0" />
+      <LineId Id="1076" Count="0" />
+      <LineId Id="1073" Count="0" />
+      <LineId Id="994" Count="1" />
+      <LineId Id="998" Count="0" />
+      <LineId Id="1071" Count="0" />
+      <LineId Id="1082" Count="0" />
+      <LineId Id="989" Count="0" />
+      <LineId Id="986" Count="0" />
+      <LineId Id="515" Count="2" />
+      <LineId Id="509" Count="0" />
+      <LineId Id="704" Count="0" />
+      <LineId Id="716" Count="2" />
+      <LineId Id="804" Count="0" />
+      <LineId Id="719" Count="3" />
+      <LineId Id="705" Count="0" />
+      <LineId Id="723" Count="1" />
+      <LineId Id="707" Count="0" />
+      <LineId Id="709" Count="2" />
+      <LineId Id="803" Count="0" />
+      <LineId Id="712" Count="3" />
+      <LineId Id="708" Count="0" />
+      <LineId Id="726" Count="1" />
+      <LineId Id="801" Count="1" />
+      <LineId Id="706" Count="0" />
+      <LineId Id="303" Count="0" />
+      <LineId Id="969" Count="1" />
+      <LineId Id="966" Count="0" />
+      <LineId Id="972" Count="0" />
+      <LineId Id="979" Count="0" />
+      <LineId Id="975" Count="3" />
+      <LineId Id="967" Count="1" />
+      <LineId Id="70" Count="8" />
+      <LineId Id="521" Count="0" />
+      <LineId Id="528" Count="0" />
+      <LineId Id="526" Count="0" />
+      <LineId Id="348" Count="0" />
+      <LineId Id="378" Count="1" />
+      <LineId Id="513" Count="0" />
+      <LineId Id="380" Count="7" />
+      <LineId Id="545" Count="0" />
+      <LineId Id="388" Count="0" />
+      <LineId Id="395" Count="0" />
+      <LineId Id="389" Count="1" />
+      <LineId Id="415" Count="0" />
+      <LineId Id="413" Count="1" />
+      <LineId Id="392" Count="2" />
+      <LineId Id="391" Count="0" />
+      <LineId Id="397" Count="0" />
+      <LineId Id="399" Count="2" />
+      <LineId Id="398" Count="0" />
+      <LineId Id="402" Count="0" />
+      <LineId Id="416" Count="0" />
+      <LineId Id="408" Count="0" />
+      <LineId Id="410" Count="0" />
+      <LineId Id="412" Count="0" />
+      <LineId Id="411" Count="0" />
+      <LineId Id="409" Count="0" />
+      <LineId Id="404" Count="3" />
+      <LineId Id="403" Count="0" />
+      <LineId Id="349" Count="0" />
+      <LineId Id="419" Count="0" />
+      <LineId Id="417" Count="1" />
+      <LineId Id="432" Count="0" />
+      <LineId Id="420" Count="0" />
+      <LineId Id="422" Count="0" />
+      <LineId Id="876" Count="0" />
+      <LineId Id="423" Count="0" />
+      <LineId Id="426" Count="0" />
+      <LineId Id="433" Count="0" />
+      <LineId Id="427" Count="0" />
+      <LineId Id="434" Count="0" />
+      <LineId Id="428" Count="0" />
+      <LineId Id="430" Count="1" />
+      <LineId Id="514" Count="0" />
+      <LineId Id="429" Count="0" />
+      <LineId Id="421" Count="0" />
+      <LineId Id="88" Count="6" />
+      <LineId Id="1155" Count="0" />
+      <LineId Id="1157" Count="1" />
+      <LineId Id="1156" Count="0" />
+      <LineId Id="95" Count="0" />
+      <LineId Id="1187" Count="1" />
+      <LineId Id="1184" Count="2" />
+      <LineId Id="1162" Count="0" />
+      <LineId Id="1172" Count="1" />
+      <LineId Id="1159" Count="1" />
+      <LineId Id="96" Count="198" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

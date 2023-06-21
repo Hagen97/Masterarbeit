@@ -1,0 +1,31 @@
+C:\Users\Silke Röthemeier\source\repos\User Application Reibkorrosionsprüfstand\User Application Reibkorrosionsprüfstand\bin\x64\Debug\User Application Reibkorrosionsprüfstand.exe.config
+C:\Users\Silke Röthemeier\source\repos\User Application Reibkorrosionsprüfstand\User Application Reibkorrosionsprüfstand\bin\x64\Debug\User Application Reibkorrosionsprüfstand.exe
+C:\Users\Silke Röthemeier\source\repos\User Application Reibkorrosionsprüfstand\User Application Reibkorrosionsprüfstand\bin\x64\Debug\User Application Reibkorrosionsprüfstand.pdb
+C:\Users\Silke Röthemeier\source\repos\User Application Reibkorrosionsprüfstand\User Application Reibkorrosionsprüfstand\bin\x64\Debug\TwinCAT.Ads.dll
+C:\Users\Silke Röthemeier\source\repos\User Application Reibkorrosionsprüfstand\User Application Reibkorrosionsprüfstand\bin\x64\Debug\TwinCAT.Ads.xml
+C:\Users\Silke Röthemeier\source\repos\User Application Reibkorrosionsprüfstand\User Application Reibkorrosionsprüfstand\obj\x64\Debug\User Application Reibkorrosionsprüfstand.csproj.AssemblyReference.cache
+C:\Users\Silke Röthemeier\source\repos\User Application Reibkorrosionsprüfstand\User Application Reibkorrosionsprüfstand\obj\x64\Debug\User Application Reibkorrosionsprüfstand.csproj.SuggestedBindingRedirects.cache
+C:\Users\Silke Röthemeier\source\repos\User Application Reibkorrosionsprüfstand\User Application Reibkorrosionsprüfstand\obj\x64\Debug\User_Application_Reibkorrosionsprüfstand.Form1.resources
+C:\Users\Silke Röthemeier\source\repos\User Application Reibkorrosionsprüfstand\User Application Reibkorrosionsprüfstand\obj\x64\Debug\User_Application_Reibkorrosionsprüfstand.Form_Einstellungen.resources
+C:\Users\Silke Röthemeier\source\repos\User Application Reibkorrosionsprüfstand\User Application Reibkorrosionsprüfstand\obj\x64\Debug\User_Application_Reibkorrosionsprüfstand.Properties.Resources.resources
+C:\Users\Silke Röthemeier\source\repos\User Application Reibkorrosionsprüfstand\User Application Reibkorrosionsprüfstand\obj\x64\Debug\User Application Reibkorrosionsprüfstand.csproj.GenerateResource.cache
+C:\Users\Silke Röthemeier\source\repos\User Application Reibkorrosionsprüfstand\User Application Reibkorrosionsprüfstand\obj\x64\Debug\User Application Reibkorrosionsprüfstand.csproj.CoreCompileInputs.cache
+C:\Users\Silke Röthemeier\source\repos\User Application Reibkorrosionsprüfstand\User Application Reibkorrosionsprüfstand\obj\x64\Debug\User Application Reibkorrosionsprüfstand.csproj.CopyComplete
+C:\Users\Silke Röthemeier\source\repos\User Application Reibkorrosionsprüfstand\User Application Reibkorrosionsprüfstand\obj\x64\Debug\User Application Reibkorrosionsprüfstand.exe
+C:\Users\Silke Röthemeier\source\repos\User Application Reibkorrosionsprüfstand\User Application Reibkorrosionsprüfstand\obj\x64\Debug\User Application Reibkorrosionsprüfstand.pdb
+C:\Users\haheuer\Documents\User Application Reibkorrosionsprüfstand\User Application Reibkorrosionsprüfstand\bin\x64\Debug\User Application Reibkorrosionsprüfstand.exe.config
+C:\Users\haheuer\Documents\User Application Reibkorrosionsprüfstand\User Application Reibkorrosionsprüfstand\bin\x64\Debug\User Application Reibkorrosionsprüfstand.exe
+C:\Users\haheuer\Documents\User Application Reibkorrosionsprüfstand\User Application Reibkorrosionsprüfstand\bin\x64\Debug\User Application Reibkorrosionsprüfstand.pdb
+C:\Users\haheuer\Documents\User Application Reibkorrosionsprüfstand\User Application Reibkorrosionsprüfstand\bin\x64\Debug\TwinCAT.Ads.dll
+C:\Users\haheuer\Documents\User Application Reibkorrosionsprüfstand\User Application Reibkorrosionsprüfstand\bin\x64\Debug\TwinCAT.Ads.xml
+C:\Users\haheuer\Documents\User Application Reibkorrosionsprüfstand\User Application Reibkorrosionsprüfstand\obj\x64\Debug\User Application Reibkorrosionsprüfstand.csproj.AssemblyReference.cache
+C:\Users\haheuer\Documents\User Application Reibkorrosionsprüfstand\User Application Reibkorrosionsprüfstand\obj\x64\Debug\User Application Reibkorrosionsprüfstand.csproj.SuggestedBindingRedirects.cache
+C:\Users\haheuer\Documents\User Application Reibkorrosionsprüfstand\User Application Reibkorrosionsprüfstand\obj\x64\Debug\User_Application_Reibkorrosionsprüfstand.Form_Einstellungen.resources
+C:\Users\haheuer\Documents\User Application Reibkorrosionsprüfstand\User Application Reibkorrosionsprüfstand\obj\x64\Debug\User_Application_Reibkorrosionsprüfstand.Properties.Resources.resources
+C:\Users\haheuer\Documents\User Application Reibkorrosionsprüfstand\User Application Reibkorrosionsprüfstand\obj\x64\Debug\User Application Reibkorrosionsprüfstand.csproj.GenerateResource.cache
+C:\Users\haheuer\Documents\User Application Reibkorrosionsprüfstand\User Application Reibkorrosionsprüfstand\obj\x64\Debug\User Application Reibkorrosionsprüfstand.csproj.CoreCompileInputs.cache
+C:\Users\haheuer\Documents\User Application Reibkorrosionsprüfstand\User Application Reibkorrosionsprüfstand\obj\x64\Debug\User Application Reibkorrosionsprüfstand.csproj.CopyComplete
+C:\Users\haheuer\Documents\User Application Reibkorrosionsprüfstand\User Application Reibkorrosionsprüfstand\obj\x64\Debug\User Application Reibkorrosionsprüfstand.exe
+C:\Users\haheuer\Documents\User Application Reibkorrosionsprüfstand\User Application Reibkorrosionsprüfstand\obj\x64\Debug\User Application Reibkorrosionsprüfstand.pdb
+C:\Users\haheuer\Documents\User Application Reibkorrosionsprüfstand\User Application Reibkorrosionsprüfstand\obj\x64\Debug\User_Application_Reibkorrosionsprüfstand.Hauptfenster.resources
+C:\Users\haheuer\Documents\User Application Reibkorrosionsprüfstand\User Application Reibkorrosionsprüfstand\obj\x64\Debug\User_Application_Reibkorrosionsprüfstand.Prüfungsergebnis.resources

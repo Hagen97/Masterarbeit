@@ -1,0 +1,132 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <GVL Name="GVL_Var" Id="{07fa8ef2-ef3c-4bf7-9ee5-49ebd8db580a}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+VAR_GLOBAL
+	//-----------------------------------------------------
+	// Digitale Eingänge
+	//-----------------------------------------------------
+	// Alarm Lüfterregler
+	bDIStatusLuefterOk AT %I*: BOOL := FALSE;
+	// Not-Aus betätigt
+	bDINotAus AT %I*: BOOL := FALSE;
+	// Knebelschalter Stellung Einrichten
+	bDIKnebelschalterEinrichten AT %I*: BOOL := FALSE;
+	// Knebelschalter Stellung Betrieb
+	bDIKnebelschalterBetrieb AT %I*: BOOL := FALSE;
+	
+	// Schanierschalter für Abdeckung geschlossen
+	bDIAbdeckungGeschlossen AT %I*: BOOL := FALSE;
+	// Not-Aus quittiert
+	bDINotAusquittiert AT %I*: BOOL := FALSE;
+	// Druchschalter Festo
+	bDIDruckschalter AT %I*: BOOL := FALSE;
+	// Mikroschalter für Messtaster S5
+	bDIMesstasterVorhanden AT %I*: BOOL := FALSE;
+	
+	// Abfrage ob Heizpatronen wirklich eingeschaltet sind
+	bDIHeizpatronenEingeschaltet AT %I*:BOOL := FALSE;
+	// Taster Messtaster S5 nullen
+	bDIMesstasterNullen AT %I*: BOOL := FALSE;
+	
+	//-----------------------------------------------------
+	// Digitale Ausgänge
+	//-----------------------------------------------------
+	// Magnetventil für Luftlagertisch
+	bDARelaisMagnetventilLuftlagertisch AT %Q*: BOOL := FALSE;
+	// Magnetventil für Luftlagerbuchse
+	bDARelaisMagnetventilLuftlagerbuchse AT %Q*: BOOL := FALSE;
+	// Leuchtmelder Störung schalten	
+	bDALeuchtmelderStoerung AT %Q*: BOOL := FALSE;
+	// Leuchtmelder für Status Bereit
+	bDALeuchtmelderBereit AT %Q*: BOOL := FALSE;
+	
+	// Messtaster S5 Nullen
+	bDAMesstasterNullen AT %Q*: BOOL := FALSE;
+	
+	// Heizpatrone freigeben
+	bDAHeizpatroneFreigeben AT %Q*: BOOL := FALSE;
+	// Masse der Heizpatronen schalten
+	bDAHeizpatronenMasseSchalten AT %Q*: BOOL := FALSE;
+	
+	//-----------------------------------------------------
+	// Analoge Eingänge
+	//-----------------------------------------------------
+	// Rohwert für Temperatur unten	
+	iAIRohTemperaturUnten AT %I*: INT := 0;
+	// Rohwert für Temperatur oben
+	iAIRohTemperaturOben AT %I*: INT := 0;
+	// Rohwert für Messtaster S5
+	iAIRohMesswertMesstaster AT %I*: INT := 0;
+	
+	//-----------------------------------------------------
+	// Motorvariablen
+	//-----------------------------------------------------
+	// Variablen für MC_Power
+	bSetMotorEinschalten: BOOL := FALSE;
+	bSetDrehrichtungPositiv: BOOL := FALSE;
+	bSetDrehrichtungNegativ: BOOL := FALSE;
+	bGetMotorEingeschaltet: BOOL := FALSE;
+	
+	// Variablen für Set Position
+	bSetPosition: BOOL := FALSE;
+	bSetClearPositionLag: BOOL := FALSE;
+	rSetPositionValue: LREAL := 0;
+	bGetPositionGesetzt: BOOL := FALSE;
+	
+	// Variablen für Move Absolute
+	bSetFahrbefehl: BOOL := FALSE;
+	bSetGeregelteFahrt: BOOL := FALSE;
+	rSetFirstZielposition: LREAL := 0;
+	rSetSecondZielposition: LREAL := 0;
+	rSetThirdZielposition: LREAL := 0;
+	rSetFirstZielgeschwindigkeit: LREAL := 0;
+	rSetSecondZielgeschwindigkeit: LREAL := 0;
+	rSetThirdZielgeschwindigkeit: LREAL := 0;
+	rSetAcceleration: LREAL := 0;
+	rSetDeceleration: LREAL := 0;
+	bGetFahrbefehlGestartet: BOOL := FALSE;
+	bGetFahrbefehlAbgeschlossen: BOOL := FALSE;	
+	
+	// Variablen für MC_Stop
+	bSetAchseStop: BOOL := FALSE;
+	bGetAchseWirdGestoppt: BOOL := FALSE;
+	bGetAchseGestoppt: BOOL := FALSE;
+	
+	
+	//-----------------------------------------------------
+	// Zusätzliche C# Variablen
+	//-----------------------------------------------------
+	// GetVariablen von C#
+	bGetNotAus: BOOL := FALSE;
+	bGetNotAusQuittiert: BOOL := FALSE;
+	bGetPneumatikdruckVorhanden: BOOL := FALSE;	// Pneumatikdruck im Soll
+	bGetDruckluftZugeschaltet: BOOL := FALSE;	// Bestätigen Druckluft zugeschaltetet
+	bGetMesstasterVorhanden: BOOL := FALSE;
+	bGetMesstasterGenullt: BOOL := FALSE;
+	bGetAbdeckungGeschlossen: BOOL := FALSE;
+	bGetKnebelschalterEinrichten: BOOL := FALSE;	// Fehlt in C#
+	bGetKnebelschalterBetrieb: BOOL := FALSE;		// Fehlt in C#
+	lGetMotorposition: LREAL := 0.0;
+	bGetHeizpatronenFreigegeben: BOOL := FALSE;
+	bGetHeizpatronenMasseGeschaltet: BOOL := FALSE;
+	bGetPositonsFlanke: BOOL := FALSE;
+	
+	
+	// Set Variablen von C#
+	bSetConnect: BOOL := FALSE;
+	bSetLeuchtmelderBereit: BOOL := FALSE;	// Leuchtmelder bereit
+	bSetLeuchtmelderStoerung: BOOL := FALSE;	// Leuchtmelder Störung
+	bSetDruckluftAbschalten: BOOL := FALSE;	// Druckluft abschalten
+	bSetResetTwinCAT: BOOL := FALSE;
+	bSetHeizpatronenFreigeben: BOOL := FALSE;
+	bSetHeizpatronenMasseSchalten: BOOL := FALSE;
+	bSetMesstasterNullen: BOOL := FALSE;
+	bSetPositionsFlankeErzeugen: BOOL := FALSE;
+	rSetPositonFuerFlanke: LREAL := 0;
+	
+	
+	
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>
